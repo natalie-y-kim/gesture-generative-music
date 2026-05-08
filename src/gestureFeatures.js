@@ -7,9 +7,20 @@ export function initGestureFeatures(state) {
 }
 
 export function extractGestureFeatures(state, hands) {
-  // TODO: compute stable features from MediaPipe landmarks.
-  state.gestureFeatures.leftHand = hands.leftHand;
-  state.gestureFeatures.rightHand = hands.rightHand;
+  const left = hands.leftHand;
+  const right = hands.rightHand;
+
+  if (left) {
+    // Use the wrist y-coordinate to represent vertical hand position (height)
+    state.gestureFeatures.leftY = left[0].y;
+  }
+
+  if (right) {
+    // Estimate hand openness using the distance between thumb tip and index finger tip
+    const dx = right[4].x - right[8].x;
+    const dy = right[4].y - right[8].y;
+    state.gestureFeatures.openness = Math.sqrt(dx * dx + dy * dy);
+  }
 
   return state.gestureFeatures;
 }

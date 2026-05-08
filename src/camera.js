@@ -8,7 +8,13 @@ export function initCamera(state) {
 }
 
 export async function startCamera() {
-  // TODO: request navigator.mediaDevices.getUserMedia and set videoElement.srcObject.
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  videoElement.srcObject = stream;
+  await videoElement.play();
+
+  const placeholder = document.querySelector('.video-placeholder');
+  if (placeholder) placeholder.style.display = 'none';
+
   return videoElement;
 }
 

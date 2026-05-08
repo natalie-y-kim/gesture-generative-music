@@ -1,13 +1,12 @@
-import { initCamera } from './camera.js';
+import { initCamera, startCamera } from './camera.js';
 import { initHandTracker } from './handTracker.js';
 import { initGestureFeatures } from './gestureFeatures.js';
 import { mapGesturesToMusic } from './gestureMapping.js';
 import { initMarkovEngine } from './markovEngine.js';
-import { initScheduler } from './scheduler.js';
-import { initAudioEngine, startAudioEngine } from './audioEngine.js';
+import { initScheduler, startTrackingLoop } from './scheduler.js';
+import { initAudioEngine, startAudioEngine, playTestTone } from './audioEngine.js';
 import { initVisuals, renderVisuals } from './visuals.js';
 
-// Shared app state. Keep this small and explicit while the project shape settles.
 export const appState = {
   isAudioStarted: false,
   gestureFeatures: {
@@ -41,9 +40,9 @@ const elements = {
   debugOutput: document.querySelector('#debug-output'),
 };
 
-function initApp() {
+async function initApp() {
   initCamera(appState);
-  initHandTracker(appState);
+  await initHandTracker(appState);
   initGestureFeatures(appState);
   initMarkovEngine(appState);
   initScheduler(appState);
@@ -56,12 +55,15 @@ function initApp() {
 }
 
 async function handleStartAudio() {
+  await startCamera();
   await startAudioEngine(appState);
   appState.isAudioStarted = true;
   elements.audioStatus.textContent = 'Audio engine started';
   elements.startAudioButton.disabled = true;
 
-  // Placeholder data flow until camera, tracking, and Markov logic are implemented.
+  playTestTone();
+  startTrackingLoop(appState, updateDebugPanel);
+
   mapGesturesToMusic(appState);
   updateDebugPanel();
   renderVisuals(appState);
