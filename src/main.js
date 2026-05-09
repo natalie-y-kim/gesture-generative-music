@@ -15,6 +15,9 @@ export const appState = {
     handDistance: 0,
     handSpeed: 0,
     openness: 0,
+    temperature: 0.5,
+    rightHandSpeed: 0,
+    rightWristPrevious: null,
   },
   hands: {
     leftHand: null,

@@ -1,18 +1,32 @@
-// Gesture-to-music mapping placeholder. This is where interaction design choices
-// become concrete musical controls.
 export function mapGesturesToMusic(state) {
-  const { leftY, openness } = state.gestureFeatures;
+  const { leftY, leftOpenness, openness, handDistance, rightHandSpeed } = state.gestureFeatures;
 
+  // Left hand vertical position → pitch range.
   if (leftY !== undefined) {
-    const low = 40;
-    const high = 80;
+    const low = 52;
+    const high = 84;
     const mapped = low + (1 - leftY) * (high - low);
-
-    state.musicParameters.pitchRange = [mapped - 5, mapped + 5];
+    state.musicParameters.pitchRange = [mapped - 6, mapped + 6];
   }
 
+  // Left hand openness → Markov order control.
+  if (leftOpenness !== undefined) {
+    state.musicParameters.markovOpenness = Math.min(1, leftOpenness * 4);
+  }
+
+  // Right hand openness → volume.
   if (openness !== undefined) {
-    state.musicParameters.volume = Math.min(1, openness * 2);
+    state.musicParameters.volume = Math.min(1, openness * 5);
+  }
+
+  // Hand distance → reverb amount.
+  if (handDistance !== undefined) {
+    state.musicParameters.reverbAmount = Math.min(0.8, handDistance * 3);
+  }
+
+  // Right hand movement speed → note density.
+  if (rightHandSpeed !== undefined) {
+    state.musicParameters.density = Math.min(2.5, Math.max(0.6, 0.8 + rightHandSpeed * 20));
   }
 
   return state.musicParameters;

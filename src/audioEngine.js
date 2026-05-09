@@ -1,8 +1,26 @@
 import { getNextMarkovEvent } from './markovEngine.js';
 
 let audioContext = null;
+let reverbNode = null;
 let nextNoteTime = 0;
 let schedulerTimer = null;
+
+async function createReverb() {
+  const convolver = audioContext.createConvolver();
+  const length = audioContext.sampleRate * 2;
+  const impulse = audioContext.createBuffer(2, length, audioContext.sampleRate);
+
+  for (let c = 0; c < 2; c++) {
+    const channel = impulse.getChannelData(c);
+
+    for (let i = 0; i < length; i++) {
+      channel[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+    }
+  }
+
+  convolver.buffer = impulse;
+  return convolver;
+}
 
 export function initAudioEngine() {
   audioContext = null;
@@ -16,9 +34,14 @@ export async function startAudioEngine(state) {
     await audioContext.resume();
   }
 
+  reverbNode = await createReverb();
+  reverbNode.connect(audioContext.destination);
+
   state.isAudioStarted = true;
   nextNoteTime = audioContext.currentTime;
+
   startMarkovLoop(state);
+
   return audioContext;
 }
 
@@ -26,37 +49,56 @@ function startMarkovLoop(state) {
   if (schedulerTimer) clearInterval(schedulerTimer);
 
   schedulerTimer = setInterval(() => {
-    // Schedule notes slightly ahead of time for smooth playback.
     while (nextNoteTime < audioContext.currentTime + 0.2) {
       const event = getNextMarkovEvent(state);
-      playNote(event.frequency, event.duration, state.musicParameters.volume, nextNoteTime);
-      nextNoteTime += event.duration;
+
+      playNote(
+        event.frequency,
+        event.duration,
+        state.musicParameters.volume,
+        nextNoteTime,
+        state
+      );
+
+      // Right hand speed → note density.
+      // Higher density = shorter interval between notes.
+      const density = state.musicParameters.density ?? 1;
+
+      nextNoteTime += event.duration / density;
     }
   }, 50);
 }
 
-function playNote(frequency, duration, volume, startTime) {
-  // Main melody voice.
-  scheduleOsc(frequency, duration, volume, 'sine', startTime);
-  // Bass voice one octave below at lower volume.
-  scheduleOsc(frequency / 2, duration, volume * 0.3, 'triangle', startTime);
-}
-
-function scheduleOsc(frequency, duration, volume, type, startTime) {
+function playNote(frequency, duration, volume, startTime, state) {
   const osc = audioContext.createOscillator();
   const gain = audioContext.createGain();
+  const dryGain = audioContext.createGain();
+  const wetGain = audioContext.createGain();
+
+  // Hand distance → reverb amount.
+  const reverbAmount = state.musicParameters.reverbAmount ?? 0.3;
+
+  dryGain.gain.value = 1 - reverbAmount;
+  wetGain.gain.value = reverbAmount;
 
   osc.connect(gain);
-  gain.connect(audioContext.destination);
+  gain.connect(dryGain);
+  gain.connect(wetGain);
 
-  osc.type = type;
+  dryGain.connect(audioContext.destination);
+  wetGain.connect(reverbNode);
+
+  osc.type = 'triangle';
   osc.frequency.value = frequency;
 
   gain.gain.setValueAtTime(volume, startTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration * 0.9);
+  gain.gain.exponentialRampToValueAtTime(
+    0.001,
+    startTime + duration * 1.5
+  );
 
   osc.start(startTime);
-  osc.stop(startTime + duration);
+  osc.stop(startTime + duration * 1.5);
 }
 
 export function scheduleAudioEvent(event) {

@@ -92,23 +92,6 @@ function getZoneRects(width, height) {
 }
 
 function drawZones(ctx, width, height) {
-  const rects = getZoneRects(width, height);
-
-  ctx.fillStyle = PITCH_ZONE_COLOR;
-  ctx.fillRect(rects.leftPitch.x, rects.leftPitch.y, rects.leftPitch.w, rects.leftPitch.h);
-  ctx.fillRect(rects.rightPitch.x, rects.rightPitch.y, rects.rightPitch.w, rects.rightPitch.h);
-
-  ctx.fillStyle = VOLUME_ZONE_COLOR;
-  ctx.fillRect(rects.volume.x, rects.volume.y, rects.volume.w, rects.volume.h);
-
-  ctx.fillStyle = GUIDE_COLOR;
-  ctx.font = `${Math.max(14, width * 0.018)}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  drawRotatedLabel(ctx, 'PITCH', rects.leftPitch.x + rects.leftPitch.w / 2, height / 2);
-  drawRotatedLabel(ctx, 'PITCH', rects.rightPitch.x + rects.rightPitch.w / 2, height / 2);
-  ctx.fillText('VOLUME', rects.volume.x + rects.volume.w / 2, rects.volume.y + rects.volume.h / 2);
 }
 
 function drawRotatedLabel(ctx, text, x, y) {
@@ -123,10 +106,11 @@ function drawMusicIndicators(ctx, state, width, height) {
   const { pitchRange, volume } = state.musicParameters;
   const centerMidi = (pitchRange[0] + pitchRange[1]) / 2;
   const pitchY = midiToY(centerMidi, height);
-  const pitchZoneWidth = width * PITCH_ZONE_WIDTH_RATIO;
-  const volumeZoneWidth = width - pitchZoneWidth * 2;
-  const volumeWidth = Math.min(1, Math.max(0, volume)) * volumeZoneWidth;
 
+  const volumeValue = Math.min(1, Math.max(0, volume));
+  const volumeWidth = volumeValue * width;
+
+  // Moving pitch guide line.
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.76)';
   ctx.lineWidth = 2;
   ctx.setLineDash([8, 8]);
@@ -136,8 +120,24 @@ function drawMusicIndicators(ctx, state, width, height) {
   ctx.stroke();
   ctx.setLineDash([]);
 
+  // Pitch label follows the guide line and stays on the right side.
+  ctx.fillStyle = GUIDE_COLOR;
+  ctx.font = `${Math.max(14, width * 0.018)}px sans-serif`;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('PITCH', width - 18, pitchY - 14);
+
+  // Volume bar across the full bottom width.
   ctx.fillStyle = 'rgba(29, 185, 84, 0.88)';
-  ctx.fillRect(pitchZoneWidth, height - 8, volumeWidth, 8);
+  ctx.fillRect(0, height - 8, volumeWidth, 8);
+
+  // Volume label follows the end of the green bar.
+  ctx.fillStyle = GUIDE_COLOR;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+
+  const labelX = Math.min(width - 55, Math.max(55, volumeWidth));
+  ctx.fillText('VOLUME', labelX, height - 14);
 }
 
 function midiToY(midi, height) {
