@@ -16,6 +16,10 @@ export const appState = {
     handSpeed: 0,
     openness: 0,
   },
+  hands: {
+    leftHand: null,
+    rightHand: null,
+  },
   musicParameters: {
     tempo: 96,
     volume: 0.4,
@@ -62,7 +66,7 @@ async function handleStartAudio() {
   elements.startAudioButton.disabled = true;
 
   playTestTone();
-  startTrackingLoop(appState, updateDebugPanel);
+  startTrackingLoop(appState, handleTrackingUpdate);
 
   mapGesturesToMusic(appState);
   updateDebugPanel();
@@ -71,6 +75,11 @@ async function handleStartAudio() {
 
 function updateDebugPanel() {
   elements.debugOutput.textContent = JSON.stringify(appState, null, 2);
+}
+
+function handleTrackingUpdate(state) {
+  updateDebugPanel();
+  renderVisuals(state);
 }
 
 initApp();
