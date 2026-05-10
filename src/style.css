@@ -58,6 +58,10 @@ body {
 }
 
 .app-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
   margin-bottom: 24px;
 }
 
@@ -164,6 +168,30 @@ button {
   font-weight: 800;
   padding: 0 18px;
   transition: box-shadow 160ms ease, transform 160ms ease, filter 160ms ease;
+}
+
+.blog-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 6px;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  transition: box-shadow 160ms ease, transform 160ms ease, filter 160ms ease;
+  border: 1px solid rgba(76, 201, 240, 0.34);
+  background: rgba(24, 27, 31, 0.72);
+  box-shadow: 0 0 24px rgba(76, 201, 240, 0.12);
+  padding: 0 18px;
+  white-space: nowrap;
+}
+
+.blog-button:hover {
+  box-shadow: 0 0 0 1px rgba(76, 201, 240, 0.18), 0 14px 30px rgba(76, 201, 240, 0.16);
+  filter: saturate(1.08);
+  transform: translateY(-1px);
 }
 
 button:hover:not(:disabled) {
@@ -421,6 +449,149 @@ pre {
   padding: 12px;
 }
 
+.blog-post {
+  margin-top: 28px;
+  border-top: 1px solid rgba(76, 201, 240, 0.2);
+  padding-top: 28px;
+  scroll-margin-top: 18px;
+}
+
+.blog-content {
+  border: 1px solid #30343a;
+  border-radius: 8px;
+  background: rgba(18, 21, 25, 0.72);
+  padding: 28px;
+  backdrop-filter: blur(8px);
+}
+
+.blog-content h2 {
+  margin-bottom: 8px;
+  color: #fffaf0;
+  font-family: Orbitron, Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 2.15rem;
+  line-height: 1.05;
+}
+
+.blog-subtitle {
+  margin-bottom: 6px;
+  color: #d7dce4;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.blog-meta {
+  margin-bottom: 28px;
+  color: #89c2d9;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.blog-image {
+  margin: 0 0 30px;
+}
+
+.blog-image img {
+  display: block;
+  width: min(100%, 720px);
+  height: auto;
+  margin: 0 auto;
+  border: 1px solid rgba(76, 201, 240, 0.24);
+  border-radius: 8px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+}
+
+.blog-image figcaption {
+  max-width: 720px;
+  margin-top: 10px;
+  margin-right: auto;
+  margin-left: auto;
+  color: #8e98a3;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.video-embed {
+  position: relative;
+  width: min(100%, 720px);
+  aspect-ratio: 16 / 9;
+  margin: 20px auto 0;
+  overflow: hidden;
+  border: 1px solid rgba(76, 201, 240, 0.24);
+  border-radius: 8px;
+  background: #101214;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+}
+
+.video-embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.blog-content section {
+  margin-top: 30px;
+}
+
+.blog-content h3 {
+  margin: 0 0 12px;
+  color: #fffaf0;
+  font-size: 1.2rem;
+}
+
+.blog-content p,
+.blog-content li,
+.blog-content td,
+.blog-content th {
+  color: #d7dce4;
+  font-size: 0.98rem;
+  line-height: 1.68;
+}
+
+.blog-content p {
+  margin-bottom: 14px;
+}
+
+.blog-content ul,
+.blog-content ol {
+  margin: 0 0 16px;
+  padding-left: 22px;
+}
+
+.pipeline-list {
+  display: grid;
+  gap: 8px;
+}
+
+.blog-content table {
+  width: 100%;
+  margin: 14px 0 18px;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid #2a2f36;
+  border-radius: 8px;
+  background: #101214;
+}
+
+.blog-content th,
+.blog-content td {
+  border-bottom: 1px solid #2a2f36;
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.blog-content th {
+  color: #fffaf0;
+  font-size: 0.84rem;
+  text-transform: uppercase;
+}
+
+.blog-content tr:last-child td {
+  border-bottom: 0;
+}
+
 @media (max-width: 768px) {
   #app {
     width: min(100% - 24px, 1120px);
@@ -431,6 +602,11 @@ pre {
     font-size: 2.2rem;
   }
 
+  .app-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .app-layout,
   .transport-panel {
     grid-template-columns: 1fr;
@@ -439,6 +615,18 @@ pre {
   .transport-panel {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .stage {
+    grid-template-columns: 1fr;
+  }
+
+  .blog-content {
+    padding: 20px;
+  }
+
+  .blog-content h2 {
+    font-size: 1.7rem;
   }
 
   .control-row {

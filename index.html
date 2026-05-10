@@ -13,8 +13,11 @@
 <body>
   <div id="app">
     <header class="app-header">
-      <p class="eyebrow">Gesture Generative Music</p>
-      <h1>Markov Motion</h1>
+      <div>
+        <p class="eyebrow">Gesture Generative Music</p>
+        <h1>Markov Motion</h1>
+      </div>
+      <a class="blog-button" href="#blog-post">Blog Post</a>
     </header>
 
     <main class="app-layout">
@@ -104,6 +107,178 @@
         <summary>Debug state</summary>
         <pre id="debug-output">Waiting for app state...</pre>
       </details>
+
+      <article id="blog-post" class="blog-post" aria-labelledby="blog-title">
+        <div class="blog-content">
+          <p class="eyebrow">Project Blog</p>
+          <h2 id="blog-title">Markov Motion</h2>
+          <p class="blog-subtitle">A Gesture-Controlled Generative Music Instrument</p>
+          <p class="blog-meta">By Zhenni Yue &amp; Natalie Kim, 05/10/2026</p>
+
+          <figure class="blog-image">
+            <h3>Hero Image</h3>
+            <img
+              src="/images/hero_markov_motion.png"
+              alt="Markov Motion interface showing webcam hand tracking, gesture controls, and live audio parameters"
+            />
+          </figure>
+
+          <section>
+            <h3>Introduction</h3>
+            <p>What if you could conduct a generative melody simply by opening and closing your hand?</p>
+            <p>Markov Motion is a browser-based generative music instrument that transforms webcam-tracked hand gestures into real-time musical behavior. Rather than mapping gestures directly to isolated sound parameters like pitch or volume, we designed a system where hand movements influence the behavior of a Markov chain, a probabilistic model that generates melodies by learning transition patterns from a training sequence.</p>
+            <p>The result is a more indirect and collaborative form of interaction: you are not directly playing notes, you are shaping how the system thinks.</p>
+            <p>Built with MediaPipe Hands, the Web Audio API, and a custom Markov engine, the project sits at the intersection of computer vision, automated composition, audio synthesis, and interactive instrument design.</p>
+          </section>
+
+          <section>
+            <h3>Live Interaction</h3>
+            
+            <div class="video-embed">
+              <iframe width="560" height="315" src="https://www.youtube.com/embed/LQrUovuigN4?si=oMaWRCd_O29hf8r9" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+          </section>
+
+          <section>
+            <h3>System Pipeline</h3>
+            <p>The system processes information through five stages:</p>
+            <figure class="blog-image">
+              <img
+                src="/images/markov-motion-system.png"
+                alt="Diagram showing the Markov Motion system pipeline"
+              />
+              <figcaption>System pipeline from webcam input to gesture mapping, Markov generation, audio, and visuals.</figcaption>
+            </figure>
+            <ol class="pipeline-list">
+              <li>Webcam input</li>
+              <li>Hand tracking with MediaPipe</li>
+              <li>Gesture feature extraction</li>
+              <li>Gesture-to-music parameter mapping</li>
+              <li>Markov generation, Web Audio synthesis, and visual feedback</li>
+            </ol>
+            <p>Each stage is isolated into its own module, making the architecture modular and extensible. The Markov engine itself does not know anything about hand tracking. It only reads from a shared state object written by the gesture-mapping layer.</p>
+            <p>This separation allowed us to independently experiment with gesture detection, audio synthesis, and generative logic throughout development.</p>
+          </section>
+
+          <section>
+            <h3>Hand Tracking with MediaPipe</h3>
+            <p>To capture gesture input, we used MediaPipe Hands, a real-time computer vision framework capable of detecting and tracking 21 hand landmarks per hand directly from a webcam feed.</p>
+            <p>Each landmark returns normalized (x, y, z) coordinates relative to the video frame. From these raw coordinates, we extract several higher-level gesture features:</p>
+            <ul>
+              <li>Vertical position of the left hand</li>
+              <li>Left hand openness</li>
+              <li>Right hand pinch spread</li>
+              <li>Right hand movement velocity</li>
+              <li>Distance between both hands</li>
+            </ul>
+            <p>These features are continuously updated and written into a shared application state that drives both the audio and visual systems.</p>
+            <p>One challenge we encountered involved MediaPipe's handedness labels. MediaPipe labels hands relative to the camera rather than the user, meaning the API's "Left" hand corresponds to the user's right hand when facing the webcam.</p>
+            <p>To solve this, we mirrored the webcam feed horizontally and remapped the handedness internally so the interaction feels natural and intuitive to the performer.</p>
+          </section>
+
+          <section>
+            <h3>Gesture-to-Parameter Mapping</h3>
+            <p>Rather than assigning gestures arbitrarily, we deliberately separated structural control from expressive control across the two hands.</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Gesture</th>
+                  <th>Musical Parameter</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Left hand height</td>
+                  <td>Pitch range</td>
+                </tr>
+                <tr>
+                  <td>Left hand openness</td>
+                  <td>Markov order / variation</td>
+                </tr>
+                <tr>
+                  <td>Right hand pinch spread</td>
+                  <td>Volume</td>
+                </tr>
+                <tr>
+                  <td>Right hand movement speed</td>
+                  <td>Note density</td>
+                </tr>
+                <tr>
+                  <td>Distance between both hands</td>
+                  <td>Reverb amount</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>The left hand shapes the generative structure of the music, while the right hand controls dynamics and texture.</p>
+            <p>This separation made the instrument easier to learn and more expressive to perform. A user can hold a stable left hand to preserve melodic structure while using the right hand to sculpt intensity and rhythm in real time.</p>
+            <figure class="blog-image">
+              <img
+                src="/images/markov-motion.png"
+                alt="Gesture-to-parameter mapping shown through live hand tracking controls"
+              />
+              <figcaption>Live gesture mapping: hand position, openness, speed, and distance drive pitch, variation, volume, density, and reverb.</figcaption>
+            </figure>
+          </section>
+
+          <section>
+            <h3>Markov-Based Generative System</h3>
+            <p>At the core of the project is a multi-order Markov chain trained on a short melody sequence: Twinkle Twinkle Little Star.</p>
+            <p>We deliberately chose this melody because it is simple and immediately recognizable, making changes in Markov order easy to hear.</p>
+            <p>The system builds transition matrices at multiple orders:</p>
+            <ul>
+              <li>Order 1: highly random melodic behavior</li>
+              <li>Order 2: partially structured patterns</li>
+              <li>Order 3: recognizable melodic continuity</li>
+              <li>Order 0: direct playback of the original melody sequence</li>
+            </ul>
+            <p>The openness of the left hand determines which mode is active. As the user slowly closes their fist, the melody transitions from chaotic and unpredictable to increasingly structured and recognizable.</p>
+            <p>This means the user is not controlling individual notes directly. They are controlling how much the system "remembers."</p>
+            <p>One technical challenge involved handling missing transitions in higher-order matrices. Since the training melody is short, certain note combinations never occur.</p>
+            <p>To address this, we implemented a fallback strategy that progressively searches lower-order matrices until a valid transition is found. If no valid transition exists, the system falls back to a random note selection.</p>
+          </section>
+
+          <section>
+            <h3>Web Audio Synthesis</h3>
+            <p>All audio generation and scheduling were implemented using the Web Audio API.</p>
+            <p>Each generated note creates an OscillatorNode and a GainNode. We chose a triangle wave oscillator because it produces a warmer and more musical tone compared to a pure sine wave. A secondary oscillator one octave lower is layered underneath at lower gain to add depth and fullness.</p>
+            <p>For timing, we implemented a lookahead scheduler: a setInterval fires every 50ms, and notes within the next 200ms window are scheduled ahead of time using the AudioContext clock.</p>
+            <p>This approach keeps playback stable and avoids timing jitter caused by JavaScript's event loop.</p>
+            <p>Reverb was implemented using a ConvolverNode with a synthetic impulse response generated from exponentially decaying noise.</p>
+            <p>The dry/wet reverb mix is controlled by the distance between both hands: spreading the hands apart increases spatial depth and ambience.</p>
+          </section>
+
+          <section>
+            <h3>Visual System</h3>
+            <p>The visual layer has two primary goals: show what the system is detecting and make the generative state visible to the performer.</p>
+            <p>The webcam overlay renders 21 hand landmarks, connection lines, gesture indicators, and parameter badges. Each controlled parameter, including pitch, variation, volume, density, and reverb, is displayed directly near the related gesture.</p>
+            <p>The background is an animated starfield that reacts to the music system itself.</p>
+            <ul>
+              <li>Star brightness increases with volume</li>
+              <li>Motion speed increases with note density</li>
+              <li>Star count increases as the left hand closes</li>
+            </ul>
+            <p>When fully open, the background contains approximately 200 stars. When fully closed, it increases to roughly 500 stars.</p>
+            <p>This ties the visual environment directly to the generative state of the music, making the system feel alive even when no hands are present.</p>
+          </section>
+
+          <section>
+            <h3>Challenges and Reflections</h3>
+            <p>One thing we learned is that probabilistic control behaves very differently from direct parameter control.</p>
+            <p>When turning a knob on a traditional synthesizer, the result is immediate and deterministic. In contrast, shifting a Markov order changes probability distributions, meaning the musical behavior evolves gradually over time rather than changing instantly.</p>
+            <p>The melody does not suddenly snap into a new state. It drifts toward one.</p>
+            <p>This made the interaction feel more like conducting than traditional note-playing, which aligned strongly with our original design goal of creating an indirect and collaborative musical instrument.</p>
+            <p>Another challenge involved making changes in Markov order perceptible enough to users in real time. Lower-order chains sometimes sounded too chaotic, while higher-order chains became repetitive too quickly.</p>
+            <p>Using a highly recognizable training melody helped make these structural changes more audible and understandable during performance.</p>
+          </section>
+
+          <section>
+            <h3>Conclusion</h3>
+            <p>Markov Motion began as an experiment in gesture-controlled generative music, but evolved into a study of indirect interaction and probabilistic musical behavior. Instead of treating gestures as direct commands, we explored how human movement could shape the internal behavior of a generative system over time.</p>
+            <p>By combining computer vision, Markov-based composition, Web Audio synthesis, and reactive visuals, we created an instrument that feels less like pressing buttons and more like conducting a living musical process.</p>
+            <p>More broadly, the project challenged us to think about interaction design not only in terms of control, but also in terms of collaboration between human intention and computational systems.</p>
+          </section>
+        </div>
+      </article>
     </main>
   </div>
 
