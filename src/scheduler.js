@@ -4,12 +4,15 @@ import { mapGesturesToMusic } from './gestureMapping.js';
 import { getVideoElement } from './camera.js';
 
 const MISSED_FRAME_GRACE = 5;
+let trackingFrameId = null;
 
 export function initScheduler(state) {
   state.debug.schedulerReady = true;
 }
 
 export function startTrackingLoop(state, onUpdate) {
+  stopTrackingLoop();
+
   function loop() {
     const video = getVideoElement();
     const hands = detectHands(video);
@@ -41,7 +44,14 @@ export function startTrackingLoop(state, onUpdate) {
     extractGestureFeatures(state, hands);
     mapGesturesToMusic(state);
     if (onUpdate) onUpdate(state);
-    requestAnimationFrame(loop);
+    trackingFrameId = requestAnimationFrame(loop);
   }
-  requestAnimationFrame(loop);
+  trackingFrameId = requestAnimationFrame(loop);
+}
+
+export function stopTrackingLoop() {
+  if (trackingFrameId !== null) {
+    cancelAnimationFrame(trackingFrameId);
+    trackingFrameId = null;
+  }
 }

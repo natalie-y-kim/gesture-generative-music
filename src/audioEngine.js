@@ -28,7 +28,9 @@ export function initAudioEngine() {
 
 export async function startAudioEngine(state) {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  audioContext = audioContext || new AudioContextClass();
+  audioContext = !audioContext || audioContext.state === 'closed'
+    ? new AudioContextClass()
+    : audioContext;
 
   if (audioContext.state === 'suspended') {
     await audioContext.resume();
@@ -43,6 +45,26 @@ export async function startAudioEngine(state) {
   startMarkovLoop(state);
 
   return audioContext;
+}
+
+export async function stopAudioEngine(state) {
+  if (schedulerTimer) {
+    clearInterval(schedulerTimer);
+    schedulerTimer = null;
+  }
+
+  if (reverbNode) {
+    reverbNode.disconnect();
+    reverbNode = null;
+  }
+
+  if (audioContext && audioContext.state !== 'closed') {
+    await audioContext.close();
+  }
+
+  audioContext = null;
+  nextNoteTime = 0;
+  state.isAudioStarted = false;
 }
 
 function startMarkovLoop(state) {

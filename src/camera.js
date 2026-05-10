@@ -18,6 +18,18 @@ export async function startCamera() {
   return videoElement;
 }
 
+export function stopCamera() {
+  const stream = videoElement?.srcObject;
+
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop());
+    videoElement.srcObject = null;
+  }
+
+  const placeholder = document.querySelector('.video-placeholder');
+  if (placeholder) placeholder.style.display = '';
+}
+
 export function getVideoElement() {
   return videoElement;
 }
