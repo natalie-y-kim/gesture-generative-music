@@ -32,9 +32,59 @@
         </div>
       </section>
 
-      <section class="panel debug-panel" aria-labelledby="debug-title">
-        <h2 id="debug-title">Debug</h2>
-        <pre id="debug-output">Waiting for app state...</pre>
+      <section class="panel controls-panel" aria-labelledby="controls-title">
+        <h2 id="controls-title">Current Controls</h2>
+        <div class="control-list" id="control-list">
+          <div class="control-row" data-control="pitch">
+            <div>
+              <span class="control-name">Pitch</span>
+              <span class="control-source">Left hand height</span>
+            </div>
+            <meter id="pitch-meter" min="36" max="84" value="60"></meter>
+            <span id="pitch-value" class="control-value">--</span>
+          </div>
+
+          <div class="control-row" data-control="volume">
+            <div>
+              <span class="control-name">Volume</span>
+              <span class="control-source">Right pinch spread</span>
+            </div>
+            <meter id="volume-meter" min="0" max="1" value="0"></meter>
+            <span id="volume-value" class="control-value">--</span>
+          </div>
+
+          <div class="control-row" data-control="density">
+            <div>
+              <span class="control-name">Density</span>
+              <span class="control-source">Right hand motion</span>
+            </div>
+            <meter id="density-meter" min="0.6" max="2.5" value="0.6"></meter>
+            <span id="density-value" class="control-value">--</span>
+          </div>
+
+          <div class="control-row" data-control="reverb">
+            <div>
+              <span class="control-name">Reverb</span>
+              <span class="control-source">Distance between hands</span>
+            </div>
+            <meter id="reverb-meter" min="0" max="0.8" value="0"></meter>
+            <span id="reverb-value" class="control-value">--</span>
+          </div>
+
+          <div class="control-row" data-control="variation">
+            <div>
+              <span class="control-name">Variation</span>
+              <span class="control-source">Left hand spread</span>
+            </div>
+            <meter id="variation-meter" min="0" max="1" value="0"></meter>
+            <span id="variation-value" class="control-value">--</span>
+          </div>
+        </div>
+
+        <details class="debug-details">
+          <summary>Debug state</summary>
+          <pre id="debug-output">Waiting for app state...</pre>
+        </details>
       </section>
     </main>
   </div>

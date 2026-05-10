@@ -34,9 +34,9 @@ export function detectHands(video) {
   if (results.landmarks && results.handednesses) {
     results.landmarks.forEach((landmarks, i) => {
       const label = results.handednesses[i][0].categoryName;
-      // MediaPipe labels are mirrored, so Left = right hand in real life.
-      if (label === 'Left') rightHand = landmarks;
-      if (label === 'Right') leftHand = landmarks;
+      
+      if (label === 'Left') leftHand = landmarks;
+      if (label === 'Right') rightHand = landmarks;
     });
   }
 

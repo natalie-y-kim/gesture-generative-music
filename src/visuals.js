@@ -1,49 +1,9 @@
 let canvas = null;
 let context = null;
 
-const PITCH_ZONE_COLOR = 'rgba(144, 238, 144, 0.22)';
-const VOLUME_ZONE_COLOR = 'rgba(135, 206, 250, 0.2)';
 const LANDMARK_COLOR = '#ff7a00';
-const CONNECTION_COLOR = 'rgba(255, 122, 0, 1)';
-const GUIDE_COLOR = 'rgba(255, 255, 255, 0.68)';
 const LANDMARK_RADIUS = 4;
 const FINGERTIP_RADIUS = 7;
-const PITCH_ZONE_WIDTH_RATIO = 0.22;
-const VOLUME_ZONE_HEIGHT_RATIO = 0.22;
-
-const HAND_CONNECTIONS = [
-  [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 4],
-  [0, 5],
-  [5, 6],
-  [6, 7],
-  [7, 8],
-  [0, 9],
-  [9, 10],
-  [10, 11],
-  [11, 12],
-  [0, 13],
-  [13, 14],
-  [14, 15],
-  [15, 16],
-  [0, 17],
-  [17, 18],
-  [18, 19],
-  [19, 20],
-  [5, 9],
-  [9, 13],
-  [13, 17],
-];
-
-const FINGER_PATHS = [
-  { color: '#ff7a00', points: [0, 1, 2, 3, 4] },
-  { color: '#ffd166', points: [0, 5, 6, 7, 8] },
-  { color: '#06d6a0', points: [0, 9, 10, 11, 12] },
-  { color: '#4cc9f0', points: [0, 13, 14, 15, 16] },
-  { color: '#f72585', points: [0, 17, 18, 19, 20] },
-];
 
 export function initVisuals() {
   canvas = document.querySelector('#visuals-canvas');
@@ -58,9 +18,10 @@ export function renderVisuals(state) {
   const { width, height } = canvas;
   context.clearRect(0, 0, width, height);
 
-  drawZones(context, width, height);
-  drawMusicIndicators(context, state, width, height);
+  if (!isAnyHandTracked(state)) return;
+
   drawHands(context, state.hands, width, height);
+  drawControlFeedback(context, state, width, height);
 }
 
 function resizeCanvasToDisplaySize(targetCanvas) {
@@ -75,76 +36,135 @@ function resizeCanvasToDisplaySize(targetCanvas) {
   }
 }
 
-function getZoneRects(width, height) {
-  const pitchWidth = width * PITCH_ZONE_WIDTH_RATIO;
-  const volumeHeight = height * VOLUME_ZONE_HEIGHT_RATIO;
-
-  return {
-    leftPitch: { x: 0, y: 0, w: pitchWidth, h: height },
-    rightPitch: { x: width - pitchWidth, y: 0, w: pitchWidth, h: height },
-    volume: {
-      x: pitchWidth,
-      y: height - volumeHeight,
-      w: width - pitchWidth * 2,
-      h: volumeHeight,
-    },
-  };
+function isAnyHandTracked(state) {
+  return Boolean(state.tracking?.leftHand || state.tracking?.rightHand);
 }
 
-function drawZones(ctx, width, height) {
+function drawControlFeedback(ctx, state, width, height) {
+  const leftHand = state.hands?.leftHand;
+  const rightHand = state.hands?.rightHand;
+
+  if (leftHand) {
+    drawPitchFeedback(ctx, state, leftHand, width, height);
+    drawVariationFeedback(ctx, state, leftHand, width, height);
+  }
+
+  if (rightHand) {
+    drawVolumeFeedback(ctx, state, rightHand, width, height);
+    drawDensityFeedback(ctx, state, rightHand, width, height);
+  }
+
+  if (leftHand && rightHand) {
+    drawReverbFeedback(ctx, state, leftHand, rightHand, width, height);
+  }
 }
 
-function drawRotatedLabel(ctx, text, x, y) {
+function drawPitchFeedback(ctx, state, landmarks, width, height) {
+  const wrist = toCanvasPoint(landmarks[0], width, height);
+  const pitchCenter = (state.musicParameters.pitchRange[0] + state.musicParameters.pitchRange[1]) / 2;
+  drawValueBadge(ctx, wrist.x + 16, wrist.y - 18, 'PITCH', getPitchValue(state), '#90ee90');
+}
+
+function drawVolumeFeedback(ctx, state, landmarks, width, height) {
+  const thumb = toCanvasPoint(landmarks[4], width, height);
+  const index = toCanvasPoint(landmarks[8], width, height);
+  const center = midpoint(thumb, index);
+  const volume = Math.min(1, Math.max(0, state.musicParameters.volume));
+
+  drawMeasuredLine(ctx, thumb, index, '#87cefa', volume);
+  drawValueBadge(ctx, center.x + 16, center.y - 18, 'VOLUME', getPercentValue(volume), '#87cefa');
+}
+
+function drawDensityFeedback(ctx, state, landmarks, width, height) {
+  const wrist = toCanvasPoint(landmarks[0], width, height);
+  const velocity = state.gestureFeatures.rightWristVelocity;
+  const density = normalize(state.musicParameters.density, 0.6, 2.5);
+
+  if (velocity) {
+    const dx = velocity.x * width;
+    const dy = velocity.y * height;
+
+    ctx.save();
+    ctx.strokeStyle = `rgba(247, 37, 133, ${0.28 + density * 0.52})`;
+    ctx.lineWidth = 4 + density * 8;
+    ctx.lineCap = 'round';
+
+    for (let index = 1; index <= 3; index += 1) {
+      ctx.globalAlpha = (1 - index * 0.22) * (0.4 + density * 0.6);
+      ctx.beginPath();
+      ctx.moveTo(wrist.x - dx * index * 7, wrist.y - dy * index * 7);
+      ctx.lineTo(wrist.x - dx * (index + 1) * 12, wrist.y - dy * (index + 1) * 12);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  drawValueBadge(ctx, wrist.x + 16, wrist.y + 18, 'DENSITY', getDensityValue(state.musicParameters.density), '#f72585');
+}
+
+function drawReverbFeedback(ctx, state, leftHand, rightHand, width, height) {
+  const leftWrist = toCanvasPoint(leftHand[0], width, height);
+  const rightWrist = toCanvasPoint(rightHand[0], width, height);
+  const reverb = normalize(state.musicParameters.reverbAmount ?? 0, 0, 0.8);
+  const center = midpoint(leftWrist, rightWrist);
+
+  drawMeasuredLine(ctx, leftWrist, rightWrist, '#f0b429', reverb);
+  drawValueBadge(ctx, center.x, center.y - 18, 'REVERB', getPercentValue(state.musicParameters.reverbAmount ?? 0), '#f0b429');
+}
+
+function drawVariationFeedback(ctx, state, landmarks, width, height) {
+  const thumb = toCanvasPoint(landmarks[4], width, height);
+  const pinky = toCanvasPoint(landmarks[20], width, height);
+  const center = midpoint(thumb, pinky);
+  const variation = Math.min(1, Math.max(0, state.musicParameters.markovOpenness ?? 0));
+
+  drawMeasuredLine(ctx, thumb, pinky, '#ffd166', variation);
+  drawValueBadge(ctx, center.x + 16, center.y + 18, 'VARIATION', getPercentValue(variation), '#ffd166');
+}
+
+function drawValueBadge(ctx, x, y, label, value, color) {
+  const width = Math.max(118, label.length * 9 + value.length * 11 + 24);
+  const height = 44;
+  const left = Math.max(8, Math.min(ctx.canvas.width - width - 8, x - width / 2));
+  const top = Math.max(8, Math.min(ctx.canvas.height - height - 8, y - height / 2));
+
   ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText(text, 0, 0);
+  ctx.shadowColor = hexToRgba(color, 0.42);
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = 'rgba(5, 6, 7, 0.72)';
+  roundRect(ctx, left, top, width, height, 8);
+  ctx.fill();
+  ctx.strokeStyle = hexToRgba(color, 0.78);
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = hexToRgba(color, 0.95);
+  ctx.font = '800 13px sans-serif';
+  ctx.fillText(label, left + 12, top + 14);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.font = '800 19px sans-serif';
+  ctx.fillText(value, left + 12, top + 31);
   ctx.restore();
 }
 
-function drawMusicIndicators(ctx, state, width, height) {
-  const { pitchRange, volume } = state.musicParameters;
-  const centerMidi = (pitchRange[0] + pitchRange[1]) / 2;
-  const pitchY = midiToY(centerMidi, height);
+function drawMeasuredLine(ctx, start, end, color, value) {
+  const clampedValue = Math.min(1, Math.max(0, value));
 
-  const volumeValue = Math.min(1, Math.max(0, volume));
-  const volumeWidth = volumeValue * width;
-
-  // Moving pitch guide line.
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.76)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([8, 8]);
+  ctx.save();
+  ctx.strokeStyle = hexToRgba(color, 0.78);
+  ctx.lineWidth = 3 + clampedValue * 8;
+  ctx.lineCap = 'round';
+  ctx.shadowColor = hexToRgba(color, 0.65);
+  ctx.shadowBlur = 14 + clampedValue * 16;
   ctx.beginPath();
-  ctx.moveTo(0, pitchY);
-  ctx.lineTo(width, pitchY);
+  ctx.moveTo(start.x, start.y);
+  ctx.lineTo(end.x, end.y);
   ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Pitch label follows the guide line and stays on the right side.
-  ctx.fillStyle = GUIDE_COLOR;
-  ctx.font = `${Math.max(14, width * 0.018)}px sans-serif`;
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('PITCH', width - 18, pitchY - 14);
-
-  // Volume bar across the full bottom width.
-  ctx.fillStyle = 'rgba(29, 185, 84, 0.88)';
-  ctx.fillRect(0, height - 8, volumeWidth, 8);
-
-  // Volume label follows the end of the green bar.
-  ctx.fillStyle = GUIDE_COLOR;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-
-  const labelX = Math.min(width - 55, Math.max(55, volumeWidth));
-  ctx.fillText('VOLUME', labelX, height - 14);
-}
-
-function midiToY(midi, height) {
-  const low = 36;
-  const high = 84;
-  const clamped = Math.min(high, Math.max(low, midi));
-  return height - ((clamped - low) / (high - low)) * height;
+  ctx.restore();
 }
 
 function drawHands(ctx, hands, width, height) {
@@ -156,52 +176,7 @@ function drawHands(ctx, hands, width, height) {
 }
 
 function drawHand(ctx, landmarks, width, height) {
-  drawPalmSkeleton(ctx, landmarks, width, height);
-  drawFingerPaths(ctx, landmarks, width, height);
   drawLandmarks(ctx, landmarks, width, height);
-}
-
-function drawPalmSkeleton(ctx, landmarks, width, height) {
-  ctx.strokeStyle = CONNECTION_COLOR;
-  ctx.lineWidth = 4;
-
-  for (const [start, end] of HAND_CONNECTIONS) {
-    const startPoint = landmarks[start];
-    const endPoint = landmarks[end];
-    if (!startPoint || !endPoint) continue;
-
-    ctx.beginPath();
-    ctx.moveTo(mirrorX(startPoint.x, width), startPoint.y * height);
-    ctx.lineTo(mirrorX(endPoint.x, width), endPoint.y * height);
-    ctx.stroke();
-  }
-}
-
-function drawFingerPaths(ctx, landmarks, width, height) {
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = 4;
-
-  for (const finger of FINGER_PATHS) {
-    ctx.strokeStyle = finger.color;
-    ctx.beginPath();
-
-    for (const [index, landmarkIndex] of finger.points.entries()) {
-      const landmark = landmarks[landmarkIndex];
-      if (!landmark) continue;
-
-      const x = mirrorX(landmark.x, width);
-      const y = landmark.y * height;
-
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    }
-
-    ctx.stroke();
-  }
 }
 
 function drawLandmarks(ctx, landmarks, width, height) {
@@ -219,6 +194,58 @@ function drawLandmarks(ctx, landmarks, width, height) {
     );
     ctx.fill();
   }
+}
+
+function toCanvasPoint(landmark, width, height) {
+  return {
+    x: mirrorX(landmark.x, width),
+    y: landmark.y * height,
+  };
+}
+
+function midpoint(start, end) {
+  return {
+    x: (start.x + end.x) / 2,
+    y: (start.y + end.y) / 2,
+  };
+}
+
+function normalize(value, min, max) {
+  return Math.min(1, Math.max(0, (value - min) / (max - min)));
+}
+
+function getPitchValue(state) {
+  const { pitchRange } = state.musicParameters;
+  const pitchCenter = (pitchRange[0] + pitchRange[1]) / 2;
+  return `${Math.round(pitchCenter)} midi`;
+}
+
+function getPercentValue(value) {
+  return `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%`;
+}
+
+function getDensityValue(value) {
+  return `${value.toFixed(1)}x`;
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  const boundedRadius = Math.min(radius, width / 2, height / 2);
+
+  ctx.beginPath();
+  ctx.moveTo(x + boundedRadius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, boundedRadius);
+  ctx.arcTo(x + width, y + height, x, y + height, boundedRadius);
+  ctx.arcTo(x, y + height, x, y, boundedRadius);
+  ctx.arcTo(x, y, x + width, y, boundedRadius);
+  ctx.closePath();
+}
+
+function hexToRgba(hex, alpha) {
+  const value = hex.replace('#', '');
+  const red = parseInt(value.slice(0, 2), 16);
+  const green = parseInt(value.slice(2, 4), 16);
+  const blue = parseInt(value.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 function mirrorX(normalizedX, width) {

@@ -130,18 +130,110 @@ canvas {
   pointer-events: none;
 }
 
-.debug-panel {
+.controls-panel {
   min-width: 0;
 }
 
+.control-list {
+  display: grid;
+  gap: 10px;
+}
+
+.control-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(76px, 0.8fr) 54px;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  border: 1px solid #2a2f36;
+  border-radius: 8px;
+  background: #121519;
+  padding: 10px;
+  opacity: 0.68;
+  transition: border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+
+.control-row.is-active {
+  border-color: #6ea8fe;
+  box-shadow: 0 0 0 1px rgba(110, 168, 254, 0.22), 0 0 18px rgba(110, 168, 254, 0.14);
+  opacity: 1;
+}
+
+.control-name,
+.control-source,
+.control-value {
+  display: block;
+}
+
+.control-name {
+  color: #fffaf0;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.control-source {
+  margin-top: 3px;
+  color: #8e98a3;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.control-value {
+  color: #e9eef5;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+meter {
+  width: 100%;
+  height: 10px;
+}
+
+meter::-webkit-meter-bar {
+  border: 0;
+  border-radius: 999px;
+  background: #252b31;
+}
+
+meter::-webkit-meter-optimum-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #90ee90, #87cefa, #f0b429);
+}
+
+meter::-moz-meter-bar {
+  border-radius: 999px;
+  background: linear-gradient(90deg, #90ee90, #87cefa, #f0b429);
+}
+
+.debug-details {
+  margin-top: 16px;
+  border-top: 1px solid #2a2f36;
+  padding-top: 12px;
+}
+
+.debug-details summary {
+  cursor: pointer;
+  color: #b8c0c7;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
 pre {
-  min-height: 320px;
+  max-height: 320px;
   margin: 0;
   overflow: auto;
   color: #d8dee4;
   font-size: 0.82rem;
   line-height: 1.45;
   white-space: pre-wrap;
+}
+
+.debug-details pre {
+  margin-top: 12px;
+  border-radius: 6px;
+  background: #101214;
+  padding: 12px;
 }
 
 @media (max-width: 768px) {
@@ -162,5 +254,14 @@ pre {
   .transport-panel {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .control-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .control-value {
+    text-align: left;
   }
 }

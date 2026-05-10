@@ -38,6 +38,10 @@ export function extractGestureFeatures(state, hands) {
       state.gestureFeatures.rightHandSpeed = Math.sqrt(
         speedDx * speedDx + speedDy * speedDy
       );
+      state.gestureFeatures.rightWristVelocity = {
+        x: speedDx,
+        y: speedDy,
+      };
     }
   
     state.gestureFeatures.rightWristPrevious = {
