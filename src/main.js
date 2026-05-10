@@ -211,4 +211,87 @@ function setControlActive(controlName, isActive) {
   row.classList.toggle('is-active', isActive);
 }
 
+// Animated starfield background.
+function initStars() {
+  const canvas = document.querySelector('#stars-canvas');
+  const ctx = canvas.getContext('2d');
+  const stars = [];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createStars(count) {
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.5 + 0.3,
+        opacity: Math.random(),
+        speed: Math.random() * 0.005 + 0.002,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+      });
+    }
+  }
+
+  function drawStars() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const volume = appState.musicParameters.volume ?? 0.4;
+    const brightness = 0.3 + volume * 0.7;
+    const variation = appState.musicParameters.markovOpenness ?? 0.5;
+    const starCount = Math.round(200 + (1 - variation) * 300);
+    const density = appState.musicParameters.density ?? 1;
+
+    if (stars.length < starCount) {
+      const toAdd = Math.min(10, starCount - stars.length); 
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.5 + 0.3,
+        opacity: Math.random(),
+        speed: Math.random() * 0.005 + 0.002,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+      });
+    } else if (stars.length > starCount) {
+      stars.pop();
+    }
+
+    for (const star of stars) {
+      star.opacity += star.speed;
+      star.x += star.vx + star.vx * Math.max(0, density - 1) * 5;
+      star.y += star.vy + star.vy * Math.max(0, density - 1) * 5;
+
+      if (star.x < 0) star.x = canvas.width;
+      if (star.x > canvas.width) star.x = 0;
+      if (star.y < 0) star.y = canvas.height;
+      if (star.y > canvas.height) star.y = 0;
+
+      if (star.opacity > 1 || star.opacity < 0) star.speed *= -1;
+
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity * brightness})`;
+      ctx.fill();
+    }
+
+    requestAnimationFrame(drawStars);
+  }
+
+  resize();
+  createStars(200);
+  drawStars();
+  window.addEventListener('resize', () => {
+    resize();
+    stars.length = 0;
+    createStars(200);
+  });
+}
+
+initStars();
 initApp();
+
+

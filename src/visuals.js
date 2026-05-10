@@ -80,25 +80,7 @@ function drawDensityFeedback(ctx, state, landmarks, width, height) {
   const velocity = state.gestureFeatures.rightWristVelocity;
   const density = normalize(state.musicParameters.density, 0.6, 2.5);
 
-  if (velocity) {
-    const dx = velocity.x * width;
-    const dy = velocity.y * height;
-
-    ctx.save();
-    ctx.strokeStyle = `rgba(247, 37, 133, ${0.28 + density * 0.52})`;
-    ctx.lineWidth = 4 + density * 8;
-    ctx.lineCap = 'round';
-
-    for (let index = 1; index <= 3; index += 1) {
-      ctx.globalAlpha = (1 - index * 0.22) * (0.4 + density * 0.6);
-      ctx.beginPath();
-      ctx.moveTo(wrist.x - dx * index * 7, wrist.y - dy * index * 7);
-      ctx.lineTo(wrist.x - dx * (index + 1) * 12, wrist.y - dy * (index + 1) * 12);
-      ctx.stroke();
-    }
-
-    ctx.restore();
-  }
+  
 
   drawValueBadge(ctx, wrist.x + 16, wrist.y + 18, 'DENSITY', getDensityValue(state.musicParameters.density), '#f72585');
 }
